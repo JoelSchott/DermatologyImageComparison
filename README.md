@@ -1,1 +1,1 @@
-# DermatologyImageComparison
+# Dermatology Image Comparison
