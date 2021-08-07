@@ -1,0 +1,10 @@
+env/
+group1_images/
+group1_images_test/
+group2_images/
+group2_images_test/
+bounding_box_images/
+results/
+GoogleDriveAccess.py
+bounding_box_test.csv
+InnerBounding.csv

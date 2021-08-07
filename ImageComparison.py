@@ -8,19 +8,20 @@ METRICS = [AspectRatioComparison(weight=0),
            ExtentRatioComparison(weight=0),
            CorrelationHistogramComparison(weight=1),
            BhattacharyyaHistogramComparison(weight=1),
-           MAEComparison(weight=1),
-           SSIMComparison(weight=1)]
+           ]
 
-GROUP1_FOLDER = "group1_images"
+GROUP1_FOLDER = r"D:\DermatologyResearchData\ISIC_BCC_2019_no_repeats"
 GROUP1_IMAGE_PATHS = [f.path for f in os.scandir(GROUP1_FOLDER)]
 GROUP1_BB_PATH = "InnerBounding.csv"
 
-GROUP2_FOLDER = "group2_images"
+GROUP2_FOLDER = r"D:\DermatologyResearchData\ISIC_BCC_2018"
 GROUP2_IMAGE_PATHS = [f.path for f in os.scandir(GROUP2_FOLDER)]
 GROUP2_BB_PATH = "InnerBounding.csv"
 
 # the size of the largest amount of images to hold in memory at one point
-IMAGE_BATCH_SIZE = len(GROUP1_IMAGE_PATHS)
+GROUP1_BATCH_SIZE = len(GROUP1_IMAGE_PATHS)
+
+OUTPUT_FILE = "results/2019_2018_hsv_results.csv"
 
 
 def image_name_from_path(image_path):
@@ -52,11 +53,11 @@ def load_image(image_path, bounding_box_dataframe, requirements):
 
     if (ImageRequirements.IMAGE in requirements) or (ImageRequirements.HISTOGRAM in requirements):
         # if the image is required and cannot be found, continue to the next image
-        if not image.load_image_from_path(image_path):
+        if not image.load_image_from_path(image_path, rgb2hsv=True):
             return None
 
     if ImageRequirements.HISTOGRAM in requirements:
-        image.calculate_histogram(normalize=False, bins=8)
+        image.calculate_histogram(normalize=False, bins=8, channels=[0, 1, 2], rgb2hsv=False)
 
     # if the image is not needed, the image can be removed to save memory
     if ImageRequirements.IMAGE not in requirements:
@@ -81,24 +82,39 @@ def load_images(image_paths, bounding_box_dataframe, requirements):
     return images
 
 
-def main():
+def requirements_for_metrics(metrics):
+    """
+    Returns a set of all requirements needed for the given metrics
+    :param metrics: list of metrics to find the requirements of
+    :return: minimal set of requirements needed
+    """
     all_requirements = set()
-    for metric in METRICS:
+    for metric in metrics:
         for requirement in metric.requires():
             all_requirements.add(requirement)
+    return all_requirements
+
+
+def main():
+    all_requirements = requirements_for_metrics(METRICS)
 
     group1_bb_dataframe = pd.read_csv(GROUP1_BB_PATH)
     group2_bb_dataframe = pd.read_csv(GROUP2_BB_PATH)
 
-    for group1_image_index in range(0, len(GROUP1_IMAGE_PATHS), IMAGE_BATCH_SIZE):
-        last_index = min(group1_image_index + IMAGE_BATCH_SIZE, len(GROUP1_IMAGE_PATHS))
-        group1_images = load_images(GROUP1_IMAGE_PATHS[group1_image_index:last_index], group1_bb_dataframe, all_requirements)
+    group2_images = load_images(GROUP2_IMAGE_PATHS, group2_bb_dataframe, all_requirements)
+
+    with open(OUTPUT_FILE, 'w') as f:
+        f.write("Group 1 Images,Group 2 Images,Score\n")
+
+    for group1_image_index in range(0, len(GROUP1_IMAGE_PATHS), GROUP1_BATCH_SIZE):
+        group1_last_index = min(group1_image_index + GROUP1_BATCH_SIZE, len(GROUP1_IMAGE_PATHS))
+        group1_images = load_images(GROUP1_IMAGE_PATHS[group1_image_index:group1_last_index], group1_bb_dataframe, all_requirements)
+
         for index, group1_image in enumerate(group1_images):
             if group1_image is None:
                 continue
             scores = []
-            for group2_image_path in GROUP2_IMAGE_PATHS:
-                group2_image = load_image(group2_image_path, group2_bb_dataframe, all_requirements)
+            for group2_image in group2_images:
                 if group2_image is None:
                     scores.append(-np.inf)
                     continue
@@ -108,7 +124,13 @@ def main():
                 scores.append(score)
             scores = np.array(scores)
             best_match_index = np.argmax(scores)
-            print(f"Group 1 Image with path {GROUP1_IMAGE_PATHS[group1_image_index + index]} matched with {GROUP2_IMAGE_PATHS[best_match_index]} with score {scores[best_match_index]}")
+
+            group1_image_path = GROUP1_IMAGE_PATHS[group1_image_index + index]
+            group2_image_path = GROUP2_IMAGE_PATHS[best_match_index]
+            best_score = scores[best_match_index]
+            print(f"Group 1 Image with path {group1_image_path} matched with {group2_image_path} with score {best_score}")
+            with open(OUTPUT_FILE, 'a') as f:
+                f.write(f"{group1_image_path},{group2_image_path},{best_score}\n")
 
 
 if __name__ == '__main__':

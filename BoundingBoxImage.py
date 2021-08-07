@@ -120,39 +120,57 @@ class BoundingBoxImage:
         self.bounding_box = bounding_box
         self.hist = None
 
-    def load_image_from_path(self, image_path, normalize=False):
+    def load_image_from_path(self, image_path, normalize=False, rgb2hsv=False):
         """
         Loads the image from the given path
         :param image_path: path to the image to load
         :param normalize: whether to normalize the image
+        :param rgb2hsv: whether to convert the image from rgb to hsv
         :return: if the image was successfully loaded
         """
         try:
             self.image = np.array(Image.open(image_path)).astype("uint8")
             if normalize:
                 self.image = normalize_image(self.image)
+            if rgb2hsv:
+                self.image = cv2.cvtColor(self.image, cv2.COLOR_RGB2HSV)
+
             return True
         except FileNotFoundError as e:
             return False
 
-    def calculate_histogram(self, use_bounding_box=True, normalize=False, bins=8):
+    def calculate_histogram(self, use_bounding_box=True, normalize=False, bins=8, channels=None, rgb2hsv=False):
         """
         Calculates a histogram from the image
         :param use_bounding_box: whether or not to use the bounding box when creating the histogram
         :param normalize: whether to norm the image to the extent of the histogram
         :param bins: the number of bins for each channel of the histogram
+        :param channels: list of the channels of the image to use, default is all of the channels
+        :param rgb2hsv: whether to convert the rgb bounding box to hsv
         """
         assert self.image is not None, "Tried to make a histogram with an image that is None"
         if use_bounding_box:
             hist_image = self.bounding_box.subimage(self.image)
         else:
             hist_image = self.image
+        if rgb2hsv:
+            hist_image = cv2.cvtColor(hist_image, cv2.COLOR_RGB2HSV)
         if normalize:
             hist_image = normalize_image(hist_image)
-        if len(self.image.shape) == 3:
-            hist = cv2.calcHist([hist_image], [0, 1, 2], None, [bins, bins, bins], [0, 256, 0, 256, 0, 256])
-        elif len(self.image.shape) == 2:
-            hist = cv2.calcHist([hist_image], [0], None, [bins], [0, 256])
+        # if channels is not given, have the channels be all of the available channels
+        if channels is None:
+            if len(self.image.shape) == 3:
+                channels = list(range(self.image.shape[2]))
+            elif len(self.image.shape) == 2:
+                channels = [0]
+        # create a bin and a range for each channel
+        all_bins = []
+        all_ranges = []
+        for _ in channels:
+            all_bins.append(bins)
+            all_ranges.extend([0, 256])
+        # create the histogram based off of the channels, bins, and ranges
+        hist = cv2.calcHist([hist_image], channels, None, all_bins, all_ranges)
         hist = cv2.normalize(hist, hist).flatten()
         self.hist = hist
 

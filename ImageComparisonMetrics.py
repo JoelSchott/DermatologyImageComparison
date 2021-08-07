@@ -92,8 +92,12 @@ class MAEComparison(ImageComparisonMetric):
     """
     Mean Absolute Error comparison of the two images
     """
-    def __call__(self, image1, image2, use_bounding_box=True):
-        if use_bounding_box:
+    def __init__(self, weight, use_bounding_box=True):
+        super().__init__(weight)
+        self.use_bounding_box = use_bounding_box
+
+    def __call__(self, image1, image2):
+        if self.use_bounding_box:
             image1 = image1.bounding_box.subimage(image1.image)
             image2 = image2.bounding_box.subimage(image2.image)
         else:
@@ -115,8 +119,12 @@ class SSIMComparison(ImageComparisonMetric):
     """
     Structured Similarity Comparison of the two images
     """
-    def __call__(self, image1, image2, use_bounding_box=True):
-        if use_bounding_box:
+    def __init__(self, weight, use_bounding_box=True):
+        super().__init__(weight)
+        self.use_bounding_box = use_bounding_box
+
+    def __call__(self, image1, image2):
+        if self.use_bounding_box:
             image1 = image1.bounding_box.subimage(image1.image)
             image2 = image2.bounding_box.subimage(image2.image)
         else:
