@@ -3,9 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 import ImageComparison
-from ImageComparisonMetrics import MAEComparison, SSIMComparison
+from ImageComparisonMetrics import AspectRatioComparison, ExtentRatioComparison, CorrelationHistogramComparison,\
+                                   BhattacharyyaHistogramComparison, MAEComparison, EMDHistogramComparison, SSIMComparison, \
+                                   PixelCorrelation, TextureSimilarity, HashComparison
+import imagehash
 
-ANALYSIS_FILE = "results/2019_2018_red_results.csv"
+ANALYSIS_FILE = "results/2019_2018_rgb_padded_results.csv"
 
 
 def display_best_matches(output_file, n=10, sort_col='Score'):
@@ -19,6 +22,7 @@ def display_best_matches(output_file, n=10, sort_col='Score'):
     data = pd.read_csv(output_file)
     data = data.sort_values(by=sort_col, ascending=False)
     for col in range(n):
+        print(f"Image {data.iloc[col]['Group 1 Images']} matches with {data.iloc[col]['Group 2 Images']}")
         plt.subplot(n, 2, col * 2 + 1)
         group1_image = Image.open(data.iloc[col]['Group 1 Images'])
         plt.imshow(group1_image)
@@ -40,11 +44,12 @@ def calculate_match_metrics(matches, metrics, first_bounding_box_dataframe, seco
     :param metrics: list of metrics to use to compare the matches
     :param first_bounding_box_dataframe: pandas dataframe describing bounding boxes for the images in the first column
     :param second_bounding_box_dataframe: pandas dataframe describing bounding boxes for the images in the second column
-    :return: pandas dataframe with an additional column, Match Score, based off of the given metrics
+    :return: pandas dataframe with additional columns for each metric and a column, Match Score, combining the given metrics
     """
-    matches['Match Score'] = [0 for _ in range(len(matches))]
-    # convert the match score column to floats
-    matches = matches.astype({'Match Score': np.float32})
+    for metric in metrics:
+        matches[str(metric)] = 0.0
+    matches['Match Score'] = 0.0
+
     all_requirements = ImageComparison.requirements_for_metrics(metrics)
     for match_index in range(len(matches)):
         first_image_path = matches.iloc[match_index, 0]
@@ -53,22 +58,32 @@ def calculate_match_metrics(matches, metrics, first_bounding_box_dataframe, seco
         second_image = ImageComparison.load_image(second_image_path, second_bounding_box_dataframe, all_requirements)
         match_score = 0
         for metric in metrics:
-            match_score += metric(first_image, second_image)
+            metric_score = metric(first_image, second_image)
+            matches.at[match_index, str(metric)] = metric_score
+            match_score += metric_score
         matches.at[match_index, 'Match Score'] = match_score
     return matches
 
 
 def main():
-    display_best_matches(ANALYSIS_FILE)
     bounding_box_dataframe = pd.read_csv("InnerBounding.csv")
-    match_metrics = [MAEComparison(weight=1),
-                     SSIMComparison(weight=1)]
+    match_metrics = [HashComparison(weight=1, hashes=[imagehash.phash])
+                    ]
+    '''match_metrics = [AspectRatioComparison(weight=1),
+                     ExtentRatioComparison(weight=1),
+                     CorrelationHistogramComparison(weight=1),
+                     BhattacharyyaHistogramComparison(weight=1),
+                     EMDHistogramComparison(weight=1),
+                     MAEComparison(weight=1),
+                     SSIMComparison(weight=1)
+                    ]'''
     matches = pd.read_csv(ANALYSIS_FILE)
     matches_new_scores = calculate_match_metrics(matches, match_metrics, bounding_box_dataframe, bounding_box_dataframe)
-    output_path = ANALYSIS_FILE[:-4] + '_match_metrics.csv'
+    output_path = ANALYSIS_FILE[:-4] + '_phash_match_metrics.csv'
     matches_new_scores.to_csv(output_path)
 
 
 if __name__ == '__main__':
-    #main()
-    display_best_matches(ANALYSIS_FILE, sort_col='Score')
+    main()
+    #display_best_matches(ANALYSIS_FILE, sort_col='Score')
+

@@ -1,6 +1,7 @@
 from PIL import Image
 import numpy as np
 import cv2
+import imagehash
 
 
 def normalize_image_by_channels(image):
@@ -119,6 +120,7 @@ class BoundingBoxImage:
         self.image = image
         self.bounding_box = bounding_box
         self.hist = None
+        self.phash = None
 
     def load_image_from_path(self, image_path, normalize=False, rgb2hsv=False):
         """
@@ -171,7 +173,7 @@ class BoundingBoxImage:
             all_ranges.extend([0, 256])
         # create the histogram based off of the channels, bins, and ranges
         hist = cv2.calcHist([hist_image], channels, None, all_bins, all_ranges)
-        hist = cv2.normalize(hist, hist).flatten()
+        hist = cv2.normalize(hist, hist, norm_type=cv2.NORM_L2).flatten()
         self.hist = hist
 
     def calculate_aspect_ratio(self, use_bounding_box=True):
@@ -186,3 +188,15 @@ class BoundingBoxImage:
         else:
             assert self.image is not None, "Tried to calculate aspect ratio when image is None"
             return self.image.shape[0] / self.image.shape[1]
+
+    def calculate_phash(self, use_bounding_box=True):
+        """
+        Calculates the perceptual hash of the image, stored as an attribute phash
+        :param use_bounding_box: whether to calculate the hash for the entire image or just the bounding box
+        """
+        if use_bounding_box:
+            hash_image = self.bounding_box.subimage(self.image)
+        else:
+            hash_image = self.image
+        hash_image = Image.fromarray(hash_image, mode='RGB')
+        self.phash = imagehash.phash(hash_image)

@@ -2,26 +2,30 @@ from BoundingBoxImage import BoundingBoxImage, BoundingBox
 from ImageComparisonMetrics import *
 import os
 import pandas as pd
+METRICS = [#AspectRatioComparison(weight=0),
+           #ExtentRatioComparison(weight=0),
+           #CorrelationHistogramComparison(weight=1),
+           #BhattacharyyaHistogramComparison(weight=1),
+#           EMDHistogramComparison(weight=1),
+#           MAEComparison(weight=1),
+#           SSIMComparison(weight=1)
+            PHashComparison(weight=1, use_bounding_box=True)
+          ]
 
-
-METRICS = [AspectRatioComparison(weight=0),
-           ExtentRatioComparison(weight=0),
-           CorrelationHistogramComparison(weight=1),
-           BhattacharyyaHistogramComparison(weight=1),
-           ]
-
-GROUP1_FOLDER = r"D:\DermatologyResearchData\ISIC_BCC_2019_no_repeats"
-GROUP1_IMAGE_PATHS = [f.path for f in os.scandir(GROUP1_FOLDER)]
+GROUP1_FOLDER = r"ISIC_BCC_2019_no_repeats"
+#ROUP1_IMAGE_PATHS = [f.path for f in os.scandir(GROUP1_FOLDER)]
+GROUP1_IMAGE_PATHS = [os.path.join('image', f) for f in os.listdir(GROUP1_FOLDER)]
 GROUP1_BB_PATH = "InnerBounding.csv"
 
-GROUP2_FOLDER = r"D:\DermatologyResearchData\ISIC_BCC_2018"
-GROUP2_IMAGE_PATHS = [f.path for f in os.scandir(GROUP2_FOLDER)]
+GROUP2_FOLDER = r"ISIC_BCC_2018"
+#GROUP2_IMAGE_PATHS = [f.path for f in os.scandir(GROUP2_FOLDER)]
+GROUP2_IMAGE_PATHS = [os.path.join('image', f) for f in os.listdir(GROUP2_FOLDER)]
 GROUP2_BB_PATH = "InnerBounding.csv"
 
 # the size of the largest amount of images to hold in memory at one point
 GROUP1_BATCH_SIZE = len(GROUP1_IMAGE_PATHS)
 
-OUTPUT_FILE = "results/2019_2018_hsv_results.csv"
+OUTPUT_FILE = "results/2019_2018_rgb_padded_hash_results2.csv"
 
 
 def image_name_from_path(image_path):
@@ -53,7 +57,7 @@ def load_image(image_path, bounding_box_dataframe, requirements):
 
     if (ImageRequirements.IMAGE in requirements) or (ImageRequirements.HISTOGRAM in requirements):
         # if the image is required and cannot be found, continue to the next image
-        if not image.load_image_from_path(image_path, rgb2hsv=True):
+        if not image.load_image_from_path(image_path, rgb2hsv=False):
             return None
 
     if ImageRequirements.HISTOGRAM in requirements:

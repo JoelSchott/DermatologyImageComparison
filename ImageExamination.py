@@ -18,7 +18,7 @@ def examine_images(images):
     plt.figure(0)
     for image_index, image in enumerate(images):
         fig = plt.subplot(rows, cols, images_made+1)
-        plt.imshow(image.image[:,:,0])
+        plt.imshow(image.image)
         plt.colorbar()
         plt.title(f"Image {image_index + 1}")
         mask_rows, mask_cols = np.where(image.bounding_box.as_mask(image.image.shape) == 1)
@@ -32,14 +32,14 @@ def examine_images(images):
         print("Bounding box minimum:", np.min(bounding_box_image[:,:,0]))
         print("Bounding box maximum:", np.max(bounding_box_image[:,:,0]))
         #bounding_box_image = BoundingBoxImage.normalize_image(bounding_box_image)
-        plt.imshow(bounding_box_image[:,:,0])
+        plt.imshow(bounding_box_image)
         plt.colorbar()
         plt.title(f"Image {image_index + 1}")
 
-        #hist = cv2.calcHist([bounding_box_image], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])
+        hist = cv2.calcHist([bounding_box_image], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])
         #hist = cv2.calcHist([bounding_box_image], [0, 1], None, [8, 8], [0, 256, 0, 256])
-        hist = cv2.calcHist([bounding_box_image], [0], None, [32], [0, 256])
-        hist = cv2.normalize(hist, hist).flatten()
+        #hist = cv2.calcHist([bounding_box_image], [0], None, [32], [0, 256])
+        hist = cv2.normalize(hist, hist, norm_type=cv2.NORM_L1).flatten()
 
         plt.subplot(rows, cols, images_made+1+(2*cols))
         plt.bar(range(1, len(hist) + 1), hist)
@@ -80,8 +80,10 @@ def examine_images(images):
 def main():
     bounding_box_dataframe = pd.read_csv("InnerBounding.csv")
     all_requirements = [ImageRequirements.IMAGE, ImageRequirements.HISTOGRAM, ImageRequirements.BOUNDING_BOX]
-    image1 = ImageComparison.load_image(r"D:\DermatologyResearchData\ISIC_BCC_2018\ISIC_0024452.jpg", bounding_box_dataframe, all_requirements)
-    image2 = ImageComparison.load_image(r"D:\DermatologyResearchData\ISIC_BCC_2019_no_repeats\ISIC_0024931.jpg", bounding_box_dataframe, all_requirements)
+    #image1 = ImageComparison.load_image(r"D:\DermatologyResearchData\ISIC_BCC_2018\ISIC_0026668.jpg", bounding_box_dataframe, all_requirements)
+    #image1 = ImageComparison.load_image(r"D:\DermatologyResearchData\ISIC_BCC_2018\ISIC_0026321.jpg", bounding_box_dataframe, all_requirements)
+    image1 = ImageComparison.load_image(r"ISIC_BCC_2018\ISIC_0031470.jpg", bounding_box_dataframe, all_requirements)
+    image2 = ImageComparison.load_image(r"ISIC_BCC_2019_no_repeats\ISIC_0062080.jpg", bounding_box_dataframe, all_requirements)
     examine_images([image1, image2])
 
 
