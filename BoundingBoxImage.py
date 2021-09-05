@@ -2,6 +2,7 @@ from PIL import Image
 import numpy as np
 import cv2
 import imagehash
+from scipy.stats import skew
 
 
 def normalize_image_by_channels(image):
@@ -120,7 +121,20 @@ class BoundingBoxImage:
         self.image = image
         self.bounding_box = bounding_box
         self.hist = None
+
         self.phash = None
+        self.dhash = None
+        self.avg_hash = None
+        self.whash = None
+
+        self.rgb_mean = None
+        self.rgb_std = None
+        self.rgb_median = None
+        self.rgb_skew = None
+        self.gray_mean = None
+        self.gray_std = None
+        self.gray_median = None
+        self.gray_skew = None
 
     def load_image_from_path(self, image_path, normalize=False, rgb2hsv=False):
         """
@@ -189,7 +203,7 @@ class BoundingBoxImage:
             assert self.image is not None, "Tried to calculate aspect ratio when image is None"
             return self.image.shape[0] / self.image.shape[1]
 
-    def calculate_phash(self, use_bounding_box=True):
+    def calculate_hashes(self, use_bounding_box=True):
         """
         Calculates the perceptual hash of the image, stored as an attribute phash
         :param use_bounding_box: whether to calculate the hash for the entire image or just the bounding box
@@ -200,3 +214,26 @@ class BoundingBoxImage:
             hash_image = self.image
         hash_image = Image.fromarray(hash_image, mode='RGB')
         self.phash = imagehash.phash(hash_image)
+        self.dhash = imagehash.dhash(hash_image)
+        self.avg_hash = imagehash.average_hash(hash_image)
+        self.whash = imagehash.whash(hash_image)
+
+    def calculate_stats(self, use_bounding_box=True):
+        """
+        Calculates the mean, median, and std of the image values for the standard image and for a grayscaled version
+        :param use_bounding_box: whether to use the bounding box of the image for the metrics or the whole image
+        """
+        if use_bounding_box:
+            stats_image = self.bounding_box.subimage(self.image)
+        else:
+            stats_image = self.image
+        self.rgb_mean = np.mean(stats_image)
+        self.rgb_median = np.median(stats_image)
+        self.rgb_std = np.std(stats_image)
+        self.rgb_skew = skew(stats_image.flatten())
+        stats_image = cv2.cvtColor(stats_image, cv2.COLOR_RGB2GRAY)
+        self.gray_mean = np.mean(stats_image)
+        self.gray_median = np.median(stats_image)
+        self.gray_std = np.std(stats_image)
+        self.gray_skew = skew(stats_image.flatten())
+

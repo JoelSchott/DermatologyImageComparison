@@ -49,6 +49,7 @@ def load_image(image_path, bounding_box_dataframe, requirements):
         bounding_box = BoundingBox()
         # if the bounding box is required and cannot be found, return None
         if not bounding_box.load_from_dataframe(image_name_from_path(image_path), bounding_box_dataframe):
+            print("Could not load the bounding box for image", image_name_from_path(image_path))
             return None
     else:
         bounding_box = None
@@ -62,6 +63,12 @@ def load_image(image_path, bounding_box_dataframe, requirements):
 
     if ImageRequirements.HISTOGRAM in requirements:
         image.calculate_histogram(normalize=False, bins=8, channels=[0, 1, 2], rgb2hsv=False)
+
+    if ImageRequirements.STATS in requirements:
+        image.calculate_stats(use_bounding_box=True)
+
+    if ImageRequirements.HASHES in requirements:
+        image.calculate_hashes(use_bounding_box=True)
 
     # if the image is not needed, the image can be removed to save memory
     if ImageRequirements.IMAGE not in requirements:
