@@ -12,6 +12,7 @@ from ImageComparisonMetrics import ImageRequirements
 DATA_FOLDER = "data"
 IMAGE_FOLDER = "images"
 
+
 def group_table_by_col(table, key_col, val_col):
     """
     Returns a dictionary where the keys are the unique elements of column key_col
@@ -115,13 +116,14 @@ def create_dataset_metrics(dataset_folder: str, bounding_box_df: pandas.DataFram
                     ImageRequirements.IMAGE, ImageRequirements.STATS,
                     ImageRequirements.HASHES]
     images = load_images(image_paths, bounding_box_df, requirements)
-    with open(os.path.join(dataset_folder, DATA_FOLDER, "metrics.csv"), 'w') as f:
+    with open(os.path.join(dataset_folder, DATA_FOLDER, "metrics_with_histogram.csv"), 'w') as f:
         header = "Image ID,Perceptual Hash,Difference Hash,Average Hash,Wavelet Hash,RGB Mean,RGB Median,RGB STD,RGB Skew," + \
-                 "Gray Mean,Gray Median,Gray STD,Gray Skew,Aspect Ratio\n"
+                 "Gray Mean,Gray Median,Gray STD,Gray Skew,Aspect Ratio,Hist Mean,Hist Median,Hist Mode,Hist STD,Hist Skew,Hist Kurtosis\n"
         f.write(header)
         for image_path, image in zip(image_paths, images):
             f.write(f'{os.path.basename(image_path)[:-4]},{image.phash},{image.dhash},{image.avg_hash},{image.whash},{image.rgb_mean},'
-                    f'{image.rgb_median},{image.rgb_std},{image.rgb_skew},{image.gray_mean},{image.gray_median},{image.gray_std},{image.gray_skew},{image.calculate_aspect_ratio()}\n')
+                    f'{image.rgb_median},{image.rgb_std},{image.rgb_skew},{image.gray_mean},{image.gray_median},{image.gray_std},{image.gray_skew},{image.calculate_aspect_ratio()},'
+                    f'{image.hist_mean},{image.hist_median},{image.hist_mode},{image.hist_std},{image.hist_skew},{image.hist_kurtosis}\n')
 
 
 def label_dataset_matches(dataset_folder: str):
@@ -132,7 +134,7 @@ def label_dataset_matches(dataset_folder: str):
     matches_data_path = os.path.join(dataset_folder, "data", os.path.basename(dataset_folder) + '_metadata.json')
     with open(matches_data_path, 'r') as f:
         matches_data = json.load(f)
-    metrics_data = pd.read_csv(os.path.join(dataset_folder, "data", "metrics.csv"))
+    metrics_data = pd.read_csv(os.path.join(dataset_folder, "data", "metrics_with_histogram.csv"))
     num_metrics = len(metrics_data)
     metrics_data['Image ID'] = metrics_data['Image ID'].map(lambda x: os.path.basename(x))
     metrics_data.insert(1, 'Matching Image ID', ['NA' for _ in range(num_metrics)])
@@ -153,7 +155,7 @@ def label_dataset_matches(dataset_folder: str):
                 if found_images == 2:
                     break
 
-    metrics_data.to_csv(os.path.join(dataset_folder, "data", "metrics_with_matches.csv"), index=False)
+    metrics_data.to_csv(os.path.join(dataset_folder, "data", "metrics_with_histogram_with_matches.csv"), index=False)
 
 
 def create_dataset_main():
@@ -166,14 +168,18 @@ def create_dataset_main():
 
 
 def dataset_metrics_main():
-    #bounding_boxs = pd.read_csv("InnerBounding.csv")
+    bounding_boxs = pd.read_csv("InnerBounding.csv")
+    for i in range(5):
+        dataset_folder = os.path.join("Datasets", f"dataset{i}")
+        create_dataset_metrics(dataset_folder, bounding_boxs)
+
+
+def label_datasets_main():
     for i in range(5):
         label_dataset_matches(os.path.join("Datasets", f"dataset{i}"))
-        #dataset_folder = os.path.join("Datasets", f"dataset{i}")
-        #create_dataset_metrics(dataset_folder, bounding_boxs)
 
 
 if __name__ == "__main__":
     #create_dataset_main()
-    dataset_metrics_main()
-
+    #dataset_metrics_main()
+    label_datasets_main()

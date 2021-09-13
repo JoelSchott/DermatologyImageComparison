@@ -63,6 +63,7 @@ def load_image(image_path, bounding_box_dataframe, requirements):
 
     if ImageRequirements.HISTOGRAM in requirements:
         image.calculate_histogram(normalize=False, bins=8, channels=[0, 1, 2], rgb2hsv=False)
+        image.calculate_histogram_metrics(use_bounding_box=True, normalize=False, bins=8, channels=['gray'])
 
     if ImageRequirements.STATS in requirements:
         image.calculate_stats(use_bounding_box=True)

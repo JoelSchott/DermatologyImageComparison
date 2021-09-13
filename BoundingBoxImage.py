@@ -2,7 +2,7 @@ from PIL import Image
 import numpy as np
 import cv2
 import imagehash
-from scipy.stats import skew
+from scipy.stats import skew, kurtosis
 
 
 def normalize_image_by_channels(image):
@@ -136,6 +136,13 @@ class BoundingBoxImage:
         self.gray_median = None
         self.gray_skew = None
 
+        self.hist_mean = None
+        self.hist_median = None
+        self.hist_mode = None
+        self.hist_std = None
+        self.hist_skew = None
+        self.hist_kurtosis = None
+
     def load_image_from_path(self, image_path, normalize=False, rgb2hsv=False):
         """
         Loads the image from the given path
@@ -189,6 +196,52 @@ class BoundingBoxImage:
         hist = cv2.calcHist([hist_image], channels, None, all_bins, all_ranges)
         hist = cv2.normalize(hist, hist, norm_type=cv2.NORM_L2).flatten()
         self.hist = hist
+
+    def calculate_histogram_metrics(self, use_bounding_box=True, normalize=False, bins=8, channels=None):
+        """
+        Calculates and stores metrics about a histogram generated from the image that has the given specifications
+        :param use_bounding_box: whether to use the bounding box of the image to make the histogram
+        :param normalize: whether to normalize the image before creating a histogram
+        :param bins: the number of bins to use for the histogram
+        :param channels: list of the indices of the channels to create metrics from, can include 'gray' to mean metrics
+                         from a grayscaled image
+        """
+        if channels is None:
+            channels = ['gray']
+
+        if use_bounding_box:
+            hist_image = self.bounding_box.subimage(self.image)
+        else:
+            hist_image = self.image
+        if normalize:
+            hist_image = normalize_image(hist_image)
+
+        hist_values = []
+        for channel in channels:
+            if channel == 'gray':
+                hist_values.append(cv2.cvtColor(hist_image, cv2.COLOR_RGB2GRAY))
+            elif channel == 0 and len(hist_image.shape) == 2:
+                hist_values.append(hist_image)
+            else:
+                hist_values.append(hist_image[:, :, channel])
+        hist_values = np.array(hist_values)
+
+        hist, bin_edges = np.histogram(hist_values, bins=bins, range=(0,255))
+        # use weights and histogram functions to find metrics about the histogram
+        bin_centers = [(bin_edges[i] + bin_edges[i+1])/2 for i in range(bins)]
+
+        self.hist_mean = np.average(bin_centers, weights=hist)
+        self.hist_std = np.sqrt(np.average((bin_centers - self.hist_mean)**2, weights=hist))
+        self.hist_mode = bin_centers[np.argmax(hist)]
+
+        hist_cum = np.cumsum(hist)
+        median_place = int(np.sum(hist)/2) + 1
+        median_index = np.where(hist_cum >= median_place)[0][0]
+        self.hist_median = bin_centers[median_index]
+
+        self.hist_skew = np.average(((bin_centers - self.hist_mean)/self.hist_std)**3, weights=hist)
+        self.hist_kurtosis = np.average(((bin_centers - self.hist_mean)/self.hist_std)**4-3, weights=hist)
+
 
     def calculate_aspect_ratio(self, use_bounding_box=True):
         """

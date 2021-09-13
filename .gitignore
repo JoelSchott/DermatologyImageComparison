@@ -8,3 +8,13 @@ results/
 GoogleDriveAccess.py
 bounding_box_test.csv
 InnerBounding.csv
+25K_image_square_with_zeropadding.zip
+Datasets/
+ISIC_BCC_2018-20210811T223142Z-001.zip
+ISIC_BCC_2018/
+ISIC_BCC_2019_no_repeats-20210811T223148Z-001.zip
+ISIC_BCC_2019_no_repeats/
+__pycache__/
+image/
+lesion_type_data.csv
+.idea/
