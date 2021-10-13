@@ -123,6 +123,7 @@ class BoundingBoxImage:
         self.hist = None
 
         self.phash = None
+        self.phash_quad = None
         self.dhash = None
         self.avg_hash = None
         self.whash = None
@@ -242,7 +243,6 @@ class BoundingBoxImage:
         self.hist_skew = np.average(((bin_centers - self.hist_mean)/self.hist_std)**3, weights=hist)
         self.hist_kurtosis = np.average(((bin_centers - self.hist_mean)/self.hist_std)**4-3, weights=hist)
 
-
     def calculate_aspect_ratio(self, use_bounding_box=True):
         """
         Calculates the aspect ratio from the image
@@ -265,6 +265,20 @@ class BoundingBoxImage:
             hash_image = self.bounding_box.subimage(self.image)
         else:
             hash_image = self.image
+        # make quadrants for the given image
+        rows, cols, channels = hash_image.shape
+        row_mid = int(rows / 2)
+        col_mid = int(cols / 2)
+        quads = [[0, 0, row_mid, col_mid],
+                 [row_mid, 0, rows, col_mid],
+                 [0, col_mid, row_mid, cols],
+                 [row_mid, col_mid, rows, cols]]
+        self.phash_quad = []
+        for quad in quads:
+            quad_image = hash_image[quad[0]: quad[2], quad[1]: quad[3], :]
+            quad_image = Image.fromarray(quad_image, mode="RGB")
+            self.phash_quad.append(imagehash.phash(quad_image))
+
         hash_image = Image.fromarray(hash_image, mode='RGB')
         self.phash = imagehash.phash(hash_image)
         self.dhash = imagehash.dhash(hash_image)

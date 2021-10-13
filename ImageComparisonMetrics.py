@@ -32,6 +32,7 @@ class ImageRequirements:
     IMAGE = 2
     HASHES = 3
     STATS = 4
+    ALL_REQUIREMENTS = [BOUNDING_BOX, HISTOGRAM, IMAGE, HASHES, STATS]
 
 
 class ImageComparisonMetric:
