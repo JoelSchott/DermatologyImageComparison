@@ -27,6 +27,26 @@ def p_hash_compare(image1, image2):
     return abs(image1.phash - image2.phash)
 
 
+def w_hash_compare(image1, image2):
+    return abs(image1.whash - image2.whash)
+
+
+def c_hash_compare(image1, image2):
+    return abs(image1.chash - image2.chash)
+
+
+def d_hash_compare(image1, image2):
+    return abs(image1.dhash - image2.dhash)
+
+
+def avg_hash_compare(image1, image2):
+    return abs(image1.avg_hash - image2.avg_hash)
+
+
+def crop_res_hash_compare(image1, image2):
+    return abs(image1.crop_resistant_hash - image2.crop_resistant_hash)
+
+
 def p_hash_quad_compare(image1, image2):
     diff = 0
     for q_phash1, q_phash2 in zip(image1.phash_quad, image2.phash_quad):
@@ -125,16 +145,25 @@ def main():
     dataset_path = r"C:\Users\joels\IdeaProjects\DermatologyImageComparison\Datasets\dataset"
     bb_data_path = r"C:\Users\joels\IdeaProjects\DermatologyImageComparison\InnerBounding.csv"
     bb_data = pd.read_csv(bb_data_path)
+
+    compare_funcs = [crop_res_hash_compare]
+    names = ['Crop-Resistant Hash']
+    results = pd.DataFrame({'Dataset Number': []})
+    for name in names:
+        results[name] = []
     for i in range(5):
+        dataset_results = {'Dataset Number': i}
         print("Dataset Number", i)
         full_path = dataset_path + str(i)
-        compare_funcs = [p_hash_quad_and_total]
-        names = ['P-Hash Quad and Total']
         for f, name in zip(compare_funcs, names):
             rankings = rank_dataset(full_path, bb_data, f)
             rankings = np.array(rankings)
             matches = np.count_nonzero(rankings == 0)
+            dataset_results[name] = matches
             print(f"\t{name}: {matches}")
+        results = results.append(dataset_results, ignore_index=True)
+    results = results.astype(dtype=np.uint32)
+    print(results)
 
 
 if __name__ == "__main__":

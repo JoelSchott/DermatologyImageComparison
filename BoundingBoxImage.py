@@ -127,6 +127,7 @@ class BoundingBoxImage:
         self.dhash = None
         self.avg_hash = None
         self.whash = None
+        self.chash = None
 
         self.rgb_mean = None
         self.rgb_std = None
@@ -284,6 +285,8 @@ class BoundingBoxImage:
         self.dhash = imagehash.dhash(hash_image)
         self.avg_hash = imagehash.average_hash(hash_image)
         self.whash = imagehash.whash(hash_image)
+        self.chash = imagehash.colorhash(hash_image)
+        self.crop_resistant_hash = imagehash.crop_resistant_hash(hash_image)
 
     def calculate_stats(self, use_bounding_box=True):
         """
