@@ -3,6 +3,8 @@ import numpy as np
 import cv2
 import imagehash
 from scipy.stats import skew, kurtosis
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
 
 
 def normalize_image_by_channels(image):
@@ -144,6 +146,8 @@ class BoundingBoxImage:
         self.hist_std = None
         self.hist_skew = None
         self.hist_kurtosis = None
+
+        self.mask = None
 
     def load_image_from_path(self, image_path, normalize=False, rgb2hsv=False):
         """
@@ -306,4 +310,23 @@ class BoundingBoxImage:
         self.gray_median = np.median(stats_image)
         self.gray_std = np.std(stats_image)
         self.gray_skew = skew(stats_image.flatten())
+
+    def calculate_mask(self, use_bounding_box=True):
+        """
+        Uses k-means clustering to find a mask for the image that masks only the lesion
+        :param use_bounding_box: whether to create the mask on the part of the image specified by the bounding box
+        """
+        if use_bounding_box:
+            image_to_mask = self.bounding_box.subimage(self.image)
+        else:
+            image_to_mask = self.image
+        plt.imshow(image_to_mask)
+        plt.show()
+        image_shape = image_to_mask.shape
+        if len(image_shape) == 3:
+            image_to_mask = image_to_mask.reshape((image_shape[0] * image_shape[1], image_shape[2]))
+        clustered = KMeans(n_clusters=2).fit_predict(image_to_mask).astype("uint8")
+        self.mask = clustered.reshape((image_shape[0], image_shape[1]))
+        plt.imshow(self.mask, interpolation=None)
+        plt.show()
 

@@ -71,6 +71,9 @@ def load_image(image_path, bounding_box_dataframe, requirements):
     if ImageRequirements.HASHES in requirements:
         image.calculate_hashes(use_bounding_box=True)
 
+    if ImageRequirements.MASK in requirements:
+        image.calculate_mask(use_bounding_box=True)
+
     # if the image is not needed, the image can be removed to save memory
     if ImageRequirements.IMAGE not in requirements:
         image.image = None

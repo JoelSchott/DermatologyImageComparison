@@ -18,3 +18,4 @@ __pycache__/
 image/
 lesion_type_data.csv
 .idea/
+activate/

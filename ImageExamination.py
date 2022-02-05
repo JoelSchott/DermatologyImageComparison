@@ -79,12 +79,13 @@ def examine_images(images):
 
 def main():
     bounding_box_dataframe = pd.read_csv("InnerBounding.csv")
-    all_requirements = [ImageRequirements.IMAGE, ImageRequirements.HISTOGRAM, ImageRequirements.BOUNDING_BOX]
+    all_requirements = [ImageRequirements.IMAGE, ImageRequirements.HISTOGRAM, ImageRequirements.BOUNDING_BOX, ImageRequirements.MASK]
     #image1 = ImageComparison.load_image(r"D:\DermatologyResearchData\ISIC_BCC_2018\ISIC_0026668.jpg", bounding_box_dataframe, all_requirements)
     #image1 = ImageComparison.load_image(r"D:\DermatologyResearchData\ISIC_BCC_2018\ISIC_0026321.jpg", bounding_box_dataframe, all_requirements)
-    image1 = ImageComparison.load_image(r"ISIC_BCC_2018\ISIC_0031470.jpg", bounding_box_dataframe, all_requirements)
-    image2 = ImageComparison.load_image(r"ISIC_BCC_2019_no_repeats\ISIC_0062080.jpg", bounding_box_dataframe, all_requirements)
-    examine_images([image1, image2])
+    ##image1 = ImageComparison.load_image(r"Datasets/dataset12cluster/ISIC_0024498.jpg", bounding_box_dataframe, all_requirements)
+    ##image2 = ImageComparison.load_image(r"Datasets/dataset12cluster/ISIC_0024673.jpg", bounding_box_dataframe, all_requirements)
+    image2 = ImageComparison.load_image(r"Datasets/dataset12cluster/ISIC_0028807.jpg", bounding_box_dataframe, all_requirements)
+    #examine_images([image1, image2])
 
 
 if __name__ == "__main__":

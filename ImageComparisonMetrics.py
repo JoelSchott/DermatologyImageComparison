@@ -3,7 +3,7 @@ import numpy as np
 from skimage.metrics import structural_similarity as ssim
 from skimage.transform import resize
 from skimage.color import rgb2gray
-from skimage.feature.texture import greycomatrix, greycoprops
+from skimage.feature import greycomatrix, greycoprops
 from scipy.stats import wasserstein_distance, pearsonr
 import imagehash
 from PIL import Image
@@ -32,7 +32,8 @@ class ImageRequirements:
     IMAGE = 2
     HASHES = 3
     STATS = 4
-    ALL_REQUIREMENTS = [BOUNDING_BOX, HISTOGRAM, IMAGE, HASHES, STATS]
+    MASK = 5
+    ALL_REQUIREMENTS = [BOUNDING_BOX, HISTOGRAM, IMAGE, HASHES, STATS, MASK]
 
 
 class ImageComparisonMetric:
